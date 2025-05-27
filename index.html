@@ -37,9 +37,9 @@
   </div>
 
  <script>
+  const channel = new BroadcastChannel("location_channel");
   let currentCity = "Los Angeles"; // fallback
 
-  const channel = new BroadcastChannel("location_channel");
   channel.onmessage = (event) => {
     if (event.data.type === "city-updated" && event.data.city) {
       currentCity = event.data.city;
@@ -55,34 +55,23 @@
 
     const openWeatherApiKey = "e9b4f16a2a8f9f682f961e4c5c9abbe2";
 
-    const countryAbbreviations = {
-      "US": "USA", "GB": "UK", "CA": "CAN",
-      "AU": "AUS", "DE": "DEU", "FR": "FRA", "IN": "IND"
-    };
-
     try {
+      // Get coordinates
       const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(currentCity)}&limit=1&appid=${openWeatherApiKey}`);
       const geoData = await geoRes.json();
-
       if (!geoData[0]) throw new Error("Invalid location");
 
-      const lat = geoData[0].lat;
-      const lon = geoData[0].lon;
-      const region = geoData[0].name;
-      const country = geoData[0].country;
+      const { lat, lon, name: region, country } = geoData[0];
 
       // Get weather
       const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
       const weatherData = await weatherRes.json();
       const tempF = Math.round(weatherData.main.temp);
       const condition = capitalize(weatherData.weather[0].description);
+      const timezone = weatherData.timezone; // in seconds offset from UTC
 
-      // Get time
-      const timeRes = await fetch(`https://worldtimeapi.org/api/timezone/Etc/UTC`);
-      const timeData = await timeRes.json();
-      const utcOffset = timeData.utc_offset || "+00:00";
-
-      const timezone = timeData.timezone || "Etc/UTC";
+      // Convert timezone offset to IANA string fallback
+      const ianaZone = offsetToIana(timezone);
 
       setInterval(() => {
         const now = new Date();
@@ -91,15 +80,14 @@
           minute: "2-digit",
           second: "2-digit",
           hour12: true,
-          timeZone: timezone
+          timeZone: ianaZone
         }).format(now);
         timeEl.textContent = formattedTime;
       }, 1000);
 
-      locationEl.textContent = `${region}, ${countryAbbreviations[country] || country}`;
+      locationEl.textContent = `${region}, ${country}`;
       conditionEl.textContent = condition;
       tempEl.textContent = `${tempF}°F`;
-
     } catch (e) {
       console.error("Error updating overlay:", e);
       locationEl.textContent = "Unable to load location.";
@@ -110,9 +98,17 @@
     function capitalize(text) {
       return text.charAt(0).toUpperCase() + text.slice(1);
     }
+
+    function offsetToIana(offsetSec) {
+      const offsetHours = offsetSec / 3600;
+      const sign = offsetHours >= 0 ? "-" : "+";
+      const padded = String(Math.abs(offsetHours)).padStart(2, "0");
+      return `Etc/GMT${sign}${padded}`;
+    }
   }
 
   updateOverlay();
 </script>
+
 </body>
 </html>

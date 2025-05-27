@@ -1,74 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Set Overlay Location</title>
+  <meta charset="UTF-8" />
+  <title>Set Location</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       background: #111;
       color: white;
+      padding: 20px;
     }
-    input, button {
-      padding: 10px;
+    label, input, button {
+      font-size: 18px;
+    }
+    input {
+      margin: 10px 0;
+      padding: 6px;
+      width: 250px;
+    }
+    button {
+      padding: 8px 16px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .status {
       margin-top: 10px;
-      width: 300px;
-    }
-    pre {
-      background: #222;
-      padding: 10px;
-      white-space: pre-wrap;
+      color: lightgreen;
     }
   </style>
 </head>
 <body>
-  <h2>🌍 Update Overlay Location</h2>
-  <input id="cityInput" placeholder="Enter City (e.g. Tokyo, Paris)" />
-  <button onclick="generateLocationData()">Generate</button>
-  <pre id="output">Waiting for input...</pre>
+  <h2>Set Your City</h2>
+  <label for="city">City Name:</label><br />
+  <input type="text" id="city" placeholder="e.g. Los Angeles" /><br />
+  <button onclick="saveCity()">Save</button>
+  <div class="status" id="status"></div>
 
   <script>
-    async function generateLocationData() {
-      const city = document.getElementById('cityInput').value.trim();
-      const apiKey = 'e9b4f16a2a8f9f682f961e4c5c9abbe2';
-
+    function saveCity() {
+      const city = document.getElementById("city").value.trim();
       if (!city) {
-        alert("Please enter a city.");
+        document.getElementById("status").textContent = "Please enter a city.";
         return;
       }
-
-      try {
-        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${apiKey}`);
-        const geoData = await geoRes.json();
-
-        if (!geoData || !geoData[0]) {
-          throw new Error("City not found.");
-        }
-
-        const lat = geoData[0].lat;
-        const lon = geoData[0].lon;
-        const cityName = geoData[0].name;
-        const country = geoData[0].country;
-
-        const tzRes = await fetch(`https://api.ipgeolocation.io/timezone?apiKey=47903aad9884431ab4bdf98b3d32cfaa&lat=${lat}&long=${lon}`);
-        const tzData = await tzRes.json();
-
-        const timezone = tzData.timezone;
-
-        const finalData = {
-          city: cityName,
-          country: country,
-          timezone: timezone
-        };
-
-        document.getElementById("output").textContent =
-          "📋 Copy this and paste into location.json:\n\n" +
-          JSON.stringify(finalData, null, 2);
-
-      } catch (err) {
-        document.getElementById("output").textContent = "❌ Error: " + err.message;
-      }
+      localStorage.setItem("weatherCity", city);
+      document.getElementById("status").textContent = `Saved! Now refresh the overlay.`;
     }
   </script>
 </body>

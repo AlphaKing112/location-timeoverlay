@@ -39,6 +39,8 @@
   <script>
     const openWeatherApiKey = "e9b4f16a2a8f9f682f961e4c5c9abbe2";
 
+    let lastCity = localStorage.getItem("city") || "New York";
+
     async function updateOverlay() {
       const timeEl = document.getElementById("time");
       const locationEl = document.getElementById("location");
@@ -46,6 +48,7 @@
       const tempEl = document.getElementById("temperature");
 
       const storedCity = localStorage.getItem("city") || "New York";
+      lastCity = storedCity; // update reference
 
       try {
         const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(storedCity)}&limit=1&appid=${openWeatherApiKey}`);
@@ -65,6 +68,7 @@
         const tempF = Math.round(weatherData.main.temp);
         const condition = capitalize(weatherData.weather[0].description);
 
+        // Update time every second
         setInterval(() => {
           const now = new Date();
           const formattedTime = new Intl.DateTimeFormat("en-US", {
@@ -87,15 +91,25 @@
         tempEl.textContent = "--°F";
       }
 
-      // Add this line here:
+      // Schedule next full weather update in 5 minutes
       setTimeout(updateOverlay, 5 * 60 * 1000);
-
-      function capitalize(text) {
-        return text.charAt(0).toUpperCase() + text.slice(1);
-      }
     }
 
-    updateOverlay();
+    function capitalize(text) {
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    // Poll for city change every 5 seconds
+    async function checkCityChange() {
+      const currentCity = localStorage.getItem("city") || "New York";
+      if (currentCity !== lastCity) {
+        await updateOverlay(); // city changed, re-fetch
+      }
+      setTimeout(checkCityChange, 5000);
+    }
+
+    updateOverlay();      // initial load
+    checkCityChange();    // start polling
   </script>
 </body>
 </html>

@@ -45,7 +45,7 @@
       const conditionEl = document.getElementById("condition");
       const tempEl = document.getElementById("temperature");
 
-      const storedCity = localStorage.getItem("city") || "Los Angeles";
+      const storedCity = localStorage.getItem("city") || "New York";
 
       try {
         const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(storedCity)}&limit=1&appid=${openWeatherApiKey}`);

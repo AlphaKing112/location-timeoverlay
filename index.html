@@ -36,44 +36,37 @@
     <div class="row"><span class="emoji">🌡</span><span id="temperature">--°F</span></div>
   </div>
 
- <script>
-  async function updateOverlay() {
-    const timeEl = document.getElementById("time");
-    const locationEl = document.getElementById("location");
-    const conditionEl = document.getElementById("condition");
-    const tempEl = document.getElementById("temperature");
-
+  <script>
     const openWeatherApiKey = "e9b4f16a2a8f9f682f961e4c5c9abbe2";
 
-    const storedCity = localStorage.getItem("city") || "Los Angeles";
-    const country = "USA"; // Default or could be editable later
+    async function updateOverlay() {
+      const timeEl = document.getElementById("time");
+      const locationEl = document.getElementById("location");
+      const conditionEl = document.getElementById("condition");
+      const tempEl = document.getElementById("temperature");
 
-    try {
-      // 1. Get latitude, longitude from OpenWeather geolocation API
-      const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(storedCity)},${country}&limit=1&appid=${openWeatherApiKey}`);
-      const geoData = await geoRes.json();
-      if (!geoData.length) throw new Error("City not found");
+      const storedCity = localStorage.getItem("city") || "Los Angeles";
 
-      const lat = geoData[0].lat;
-      const lon = geoData[0].lon;
-      const region = geoData[0].name;
+      try {
+        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(storedCity)}&limit=1&appid=${openWeatherApiKey}`);
+        const geoData = await geoRes.json();
 
-      // 2. Get timezone from IPAPI (optional: replace with city-based lookup later)
-      const tzRes = await fetch("https://ipapi.co/json/");
-      const tzData = await tzRes.json();
-      const timezone = tzData.timezone;
+        if (!geoData[0]) throw new Error("Invalid location");
 
-      // 3. Get weather
-      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
-      const weatherData = await weatherRes.json();
+        const lat = geoData[0].lat;
+        const lon = geoData[0].lon;
+        const region = geoData[0].name;
+        const country = geoData[0].country;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const tempF = Math.round(weatherData.main.temp);
-      const condition = capitalize(weatherData.weather[0].description);
+        const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
+        const weatherData = await weatherRes.json();
 
-      // 4. Live clock using fetched timezone
-      setInterval(() => {
-        const now = new Date();
-        try {
+        const tempF = Math.round(weatherData.main.temp);
+        const condition = capitalize(weatherData.weather[0].description);
+
+        setInterval(() => {
+          const now = new Date();
           const formattedTime = new Intl.DateTimeFormat("en-US", {
             hour: "numeric",
             minute: "2-digit",
@@ -82,29 +75,24 @@
             timeZone: timezone
           }).format(now);
           timeEl.textContent = formattedTime;
-        } catch (e) {
-          timeEl.textContent = "--:--";
-        }
-      }, 1000);
+        }, 1000);
 
-      // 5. Update other UI
-      locationEl.textContent = `${region}, ${country}`;
-      conditionEl.textContent = condition;
-      tempEl.textContent = `${tempF}°F`;
-    } catch (e) {
-      console.error("Error updating overlay:", e);
-      locationEl.textContent = "Unable to load location.";
-      conditionEl.textContent = "--";
-      tempEl.textContent = "--°F";
+        locationEl.textContent = `${region}, ${country}`;
+        conditionEl.textContent = condition;
+        tempEl.textContent = `${tempF}°F`;
+
+      } catch (e) {
+        locationEl.textContent = "Unable to load location.";
+        conditionEl.textContent = "--";
+        tempEl.textContent = "--°F";
+      }
+
+      function capitalize(text) {
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      }
     }
 
-    function capitalize(text) {
-      return text.charAt(0).toUpperCase() + text.slice(1);
-    }
-  }
-
-  updateOverlay();
-</script>
-
+    updateOverlay();
+  </script>
 </body>
 </html>

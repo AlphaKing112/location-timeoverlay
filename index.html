@@ -87,6 +87,9 @@
         tempEl.textContent = "--°F";
       }
 
+      // Add this line here:
+      setTimeout(updateOverlay, 5 * 60 * 1000);
+
       function capitalize(text) {
         return text.charAt(0).toUpperCase() + text.slice(1);
       }

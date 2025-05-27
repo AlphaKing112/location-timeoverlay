@@ -36,71 +36,83 @@
     <div class="row"><span class="emoji">🌡</span><span id="temperature">--°F</span></div>
   </div>
 
-  <script>
+ <script>
+  let currentCity = "Los Angeles"; // fallback
+  let currentCountry = "USA";      // fallback
+  let currentTimezone = "America/Los_Angeles"; // fallback
+
+  const channel = new BroadcastChannel("location_channel");
+  channel.onmessage = (event) => {
+    if (event.data.type === "city-updated" && event.data.city) {
+      currentCity = event.data.city;
+      updateOverlay();
+    }
+  };
+
+  async function updateOverlay() {
+    const timeEl = document.getElementById("time");
+    const locationEl = document.getElementById("location");
+    const conditionEl = document.getElementById("condition");
+    const tempEl = document.getElementById("temperature");
+
     const openWeatherApiKey = "e9b4f16a2a8f9f682f961e4c5c9abbe2";
 
-    async function updateOverlay() {
-      const timeEl = document.getElementById("time");
-      const locationEl = document.getElementById("location");
-      const conditionEl = document.getElementById("condition");
-      const tempEl = document.getElementById("temperature");
+    const countryAbbreviations = {
+      "US": "USA", "GB": "UK", "CA": "CAN",
+      "AU": "AUS", "DE": "DEU", "FR": "FRA", "IN": "IND"
+    };
 
-      const storedCity = localStorage.getItem("city") || "Los Angeles";
+    try {
+      const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(currentCity)}&limit=1&appid=${openWeatherApiKey}`);
+      const geoData = await geoRes.json();
 
-      try {
-        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(storedCity)}&limit=1&appid=${openWeatherApiKey}`);
-        const geoData = await geoRes.json();
+      if (!geoData[0]) throw new Error("Invalid location");
 
-        if (!geoData[0]) throw new Error("Invalid location");
+      const lat = geoData[0].lat;
+      const lon = geoData[0].lon;
+      const region = geoData[0].name;
+      const country = geoData[0].country;
+      const tzRes = await fetch(`https://worldtimeapi.org/api/timezone`);
+      const zones = await tzRes.json();
 
-        const lat = geoData[0].lat;
-        const lon = geoData[0].lon;
-        const region = geoData[0].name;
-        const country = geoData[0].country;
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Just guess the timezone using city name match (better: use a better API)
+      const matchingZone = zones.find(z => z.toLowerCase().includes(currentCity.toLowerCase())) || "America/Los_Angeles";
 
-        const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
-        const weatherData = await weatherRes.json();
+      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
+      const weatherData = await weatherRes.json();
 
-        const tempF = Math.round(weatherData.main.temp);
-        const condition = capitalize(weatherData.weather[0].description);
+      const tempF = Math.round(weatherData.main.temp);
+      const condition = capitalize(weatherData.weather[0].description);
 
-        setInterval(() => {
-          const now = new Date();
-          const formattedTime = new Intl.DateTimeFormat("en-US", {
-            hour: "numeric",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-            timeZone: timezone
-          }).format(now);
-          timeEl.textContent = formattedTime;
-        }, 1000);
+      locationEl.textContent = `${region}, ${countryAbbreviations[country] || country}`;
+      conditionEl.textContent = condition;
+      tempEl.textContent = `${tempF}°F`;
 
-        locationEl.textContent = `${region}, ${country}`;
-        conditionEl.textContent = condition;
-        tempEl.textContent = `${tempF}°F`;
+      setInterval(() => {
+        const now = new Date();
+        const formattedTime = new Intl.DateTimeFormat("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZone: matchingZone
+        }).format(now);
+        timeEl.textContent = formattedTime;
+      }, 1000);
 
-      } catch (e) {
-        locationEl.textContent = "Unable to load location.";
-        conditionEl.textContent = "--";
-        tempEl.textContent = "--°F";
-      }
-
-      function capitalize(text) {
-        return text.charAt(0).toUpperCase() + text.slice(1);
-      }
+    } catch (e) {
+      locationEl.textContent = "Unable to load location.";
+      conditionEl.textContent = "--";
+      tempEl.textContent = "--°F";
     }
 
-    updateOverlay();
+    function capitalize(text) {
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+  }
 
-    // 🔁 Listen for location changes from set-location.html
-    const channel = new BroadcastChannel("location_channel");
-    channel.onmessage = (event) => {
-      if (event.data.type === "city-updated") {
-        location.reload(); // Refresh the overlay to get new city
-      }
-    };
-  </script>
+  // Initial load
+  updateOverlay();
+</script>
 </body>
 </html>

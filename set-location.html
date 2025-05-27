@@ -1,52 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Set Location</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
-      color: white;
       padding: 20px;
+      background-color: #f0f0f0;
     }
     label, input, button {
       font-size: 18px;
-    }
-    input {
-      margin: 10px 0;
-      padding: 6px;
-      width: 250px;
-    }
-    button {
-      padding: 8px 16px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 10px;
-      color: lightgreen;
     }
   </style>
 </head>
 <body>
   <h2>Set Your City</h2>
-  <label for="city">City Name:</label><br />
-  <input type="text" id="city" placeholder="e.g. Los Angeles" /><br />
+  <label for="city">City:</label>
+  <input id="city" type="text" placeholder="e.g. Los Angeles" />
   <button onclick="saveCity()">Save</button>
-  <div class="status" id="status"></div>
+  <p id="status"></p>
 
   <script>
     function saveCity() {
       const city = document.getElementById("city").value.trim();
-      if (!city) {
-        document.getElementById("status").textContent = "Please enter a city.";
-        return;
-      }
-      localStorage.setItem("weatherCity", city);
-      document.getElementById("status").textContent = `Saved! Now refresh the overlay.`;
+      if (!city) return alert("Please enter a city.");
+      localStorage.setItem("city", city);
+      document.getElementById("status").textContent = `City saved: ${city}`;
     }
   </script>
 </body>

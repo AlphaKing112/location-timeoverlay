@@ -10,44 +10,65 @@
       background: #111;
       color: white;
     }
-    label, input, button {
-      display: block;
-      margin-bottom: 10px;
-    }
-    input {
-      padding: 8px;
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
       width: 300px;
+    }
+    pre {
+      background: #222;
+      padding: 10px;
+      white-space: pre-wrap;
     }
   </style>
 </head>
 <body>
-  <h1>Update Overlay Location</h1>
-  <label>City:</label>
-  <input id="city" placeholder="e.g. Los Angeles" />
-  <label>Country (e.g. USA):</label>
-  <input id="country" placeholder="e.g. USA" />
-  <label>Timezone (e.g. America/Los_Angeles):</label>
-  <input id="timezone" placeholder="e.g. America/Los_Angeles" />
-  <button onclick="saveLocation()">Save</button>
-
-  <p id="status"></p>
+  <h2>🌍 Update Overlay Location</h2>
+  <input id="cityInput" placeholder="Enter City (e.g. Tokyo, Paris)" />
+  <button onclick="generateLocationData()">Generate</button>
+  <pre id="output">Waiting for input...</pre>
 
   <script>
-    function saveLocation() {
-      const city = document.getElementById("city").value;
-      const country = document.getElementById("country").value;
-      const timezone = document.getElementById("timezone").value;
+    async function generateLocationData() {
+      const city = document.getElementById('cityInput').value.trim();
+      const apiKey = 'e9b4f16a2a8f9f682f961e4c5c9abbe2';
 
-      const locationData = {
-        city,
-        country,
-        timezone
-      };
+      if (!city) {
+        alert("Please enter a city.");
+        return;
+      }
 
-      // Save manually: just copy JSON for now
-      document.getElementById("status").textContent =
-        "Copy and paste this into location.json on GitHub:\n\n" +
-        JSON.stringify(locationData, null, 2);
+      try {
+        const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${apiKey}`);
+        const geoData = await geoRes.json();
+
+        if (!geoData || !geoData[0]) {
+          throw new Error("City not found.");
+        }
+
+        const lat = geoData[0].lat;
+        const lon = geoData[0].lon;
+        const cityName = geoData[0].name;
+        const country = geoData[0].country;
+
+        const tzRes = await fetch(`https://api.ipgeolocation.io/timezone?apiKey=47903aad9884431ab4bdf98b3d32cfaa&lat=${lat}&long=${lon}`);
+        const tzData = await tzRes.json();
+
+        const timezone = tzData.timezone;
+
+        const finalData = {
+          city: cityName,
+          country: country,
+          timezone: timezone
+        };
+
+        document.getElementById("output").textContent =
+          "📋 Copy this and paste into location.json:\n\n" +
+          JSON.stringify(finalData, null, 2);
+
+      } catch (err) {
+        document.getElementById("output").textContent = "❌ Error: " + err.message;
+      }
     }
   </script>
 </body>

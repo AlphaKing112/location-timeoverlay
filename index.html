@@ -93,6 +93,14 @@
     }
 
     updateOverlay();
+
+    // 🔁 Listen for location changes from set-location.html
+    const channel = new BroadcastChannel("location_channel");
+    channel.onmessage = (event) => {
+      if (event.data.type === "city-updated") {
+        location.reload(); // Refresh the overlay to get new city
+      }
+    };
   </script>
 </body>
 </html>

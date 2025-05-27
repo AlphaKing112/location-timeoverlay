@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Set Overlay Location</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #111;
+      color: white;
+    }
+    label, input, button {
+      display: block;
+      margin-bottom: 10px;
+    }
+    input {
+      padding: 8px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Update Overlay Location</h1>
+  <label>City:</label>
+  <input id="city" placeholder="e.g. Los Angeles" />
+  <label>Country (e.g. USA):</label>
+  <input id="country" placeholder="e.g. USA" />
+  <label>Timezone (e.g. America/Los_Angeles):</label>
+  <input id="timezone" placeholder="e.g. America/Los_Angeles" />
+  <button onclick="saveLocation()">Save</button>
+
+  <p id="status"></p>
+
+  <script>
+    function saveLocation() {
+      const city = document.getElementById("city").value;
+      const country = document.getElementById("country").value;
+      const timezone = document.getElementById("timezone").value;
+
+      const locationData = {
+        city,
+        country,
+        timezone
+      };
+
+      // Save manually: just copy JSON for now
+      document.getElementById("status").textContent =
+        "Copy and paste this into location.json on GitHub:\n\n" +
+        JSON.stringify(locationData, null, 2);
+    }
+  </script>
+</body>
+</html>

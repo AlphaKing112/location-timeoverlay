@@ -38,8 +38,6 @@
 
  <script>
   let currentCity = "Los Angeles"; // fallback
-  let currentCountry = "USA";      // fallback
-  let currentTimezone = "America/Los_Angeles"; // fallback
 
   const channel = new BroadcastChannel("location_channel");
   channel.onmessage = (event) => {
@@ -72,21 +70,19 @@
       const lon = geoData[0].lon;
       const region = geoData[0].name;
       const country = geoData[0].country;
-      const tzRes = await fetch(`https://worldtimeapi.org/api/timezone`);
-      const zones = await tzRes.json();
 
-      // Just guess the timezone using city name match (better: use a better API)
-      const matchingZone = zones.find(z => z.toLowerCase().includes(currentCity.toLowerCase())) || "America/Los_Angeles";
-
+      // Get weather
       const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=imperial&appid=${openWeatherApiKey}`);
       const weatherData = await weatherRes.json();
-
       const tempF = Math.round(weatherData.main.temp);
       const condition = capitalize(weatherData.weather[0].description);
 
-      locationEl.textContent = `${region}, ${countryAbbreviations[country] || country}`;
-      conditionEl.textContent = condition;
-      tempEl.textContent = `${tempF}°F`;
+      // Get time
+      const timeRes = await fetch(`https://worldtimeapi.org/api/timezone/Etc/UTC`);
+      const timeData = await timeRes.json();
+      const utcOffset = timeData.utc_offset || "+00:00";
+
+      const timezone = timeData.timezone || "Etc/UTC";
 
       setInterval(() => {
         const now = new Date();
@@ -95,12 +91,17 @@
           minute: "2-digit",
           second: "2-digit",
           hour12: true,
-          timeZone: matchingZone
+          timeZone: timezone
         }).format(now);
         timeEl.textContent = formattedTime;
       }, 1000);
 
+      locationEl.textContent = `${region}, ${countryAbbreviations[country] || country}`;
+      conditionEl.textContent = condition;
+      tempEl.textContent = `${tempF}°F`;
+
     } catch (e) {
+      console.error("Error updating overlay:", e);
       locationEl.textContent = "Unable to load location.";
       conditionEl.textContent = "--";
       tempEl.textContent = "--°F";
@@ -111,7 +112,6 @@
     }
   }
 
-  // Initial load
   updateOverlay();
 </script>
 </body>

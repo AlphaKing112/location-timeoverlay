@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>lazesk Chat Split</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background-color: #111;
+    }
+
+    .container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pane {
+      flex-grow: 1;
+      overflow: hidden;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    .resizer {
+      height: 8px;
+      background: #444;
+      cursor: row-resize;
+      touch-action: none;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="topPane" class="pane">
+      <iframe src="https://www.twitch.tv/embed/lazesk/chat?parent=dashboard-3x3.pages.dev&darkpopout"></iframe>
+    </div>
+    <div class="resizer" id="dragBar"></div>
+    <div id="bottomPane" class="pane">
+      <iframe src="https://kick.com/popout/lazesk/chat"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const dragBar = document.getElementById('dragBar');
+    const topPane = document.getElementById('topPane');
+    const bottomPane = document.getElementById('bottomPane');
+    const container = document.querySelector('.container');
+
+    let isDragging = false;
+
+    const startDrag = (e) => {
+      e.preventDefault();
+      isDragging = true;
+    };
+
+    const stopDrag = () => {
+      isDragging = false;
+    };
+
+    const onDrag = (e) => {
+      if (!isDragging) return;
+
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const containerRect = container.getBoundingClientRect();
+      const totalHeight = containerRect.height;
+      const offsetY = clientY - containerRect.top;
+      const resizerHeight = dragBar.offsetHeight;
+
+      const topHeight = Math.max(50, Math.min(offsetY, totalHeight - 50 - resizerHeight));
+      const bottomHeight = totalHeight - topHeight - resizerHeight;
+
+      topPane.style.height = `${topHeight}px`;
+      bottomPane.style.height = `${bottomHeight}px`;
+    };
+
+    dragBar.addEventListener('mousedown', startDrag);
+    dragBar.addEventListener('touchstart', startDrag, { passive: false });
+
+    window.addEventListener('mousemove', onDrag);
+    window.addEventListener('touchmove', onDrag, { passive: false });
+
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+  </script>
+</body>
+</html>
